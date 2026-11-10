@@ -249,7 +249,7 @@ function renderScores(){
 }
 function addScore(t,n){S.scores[t]=Math.max(0,S.scores[t]+n);save();renderScores();
   const el=$('s'+t);el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}
-function resetScores(){if(confirm('兩隊分數都歸零？')){S.scores=[0,0];save();renderScores()}}
+function resetScores(){ask('兩隊分數都要歸零嗎？',()=>{S.scores=[0,0];save();renderScores()})}
 function setTurnHL(t){$('sc0').classList.toggle('turn',t===0);$('sc1').classList.toggle('turn',t===1)}
 
 // ---------- 分頁 ----------
@@ -276,7 +276,7 @@ function renderTeams(anim){
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function splitTeams(){
-  const names=parseNames();if(names.length<2){alert('請至少輸入 2 個名字');return}
+  const names=parseNames();if(names.length<2){notice('請至少輸入 2 個名字');return}
   S.names=names;let k=0;
   const spin=setInterval(()=>{ // 洗牌動畫
     const sh=shuffle([...names]);S.teams=[sh.filter((_,i)=>i%2===0),sh.filter((_,i)=>i%2===1)];renderTeams(false);sTick();
@@ -295,7 +295,7 @@ function nextStudent(t){ // 輪流抽，全部抽過一輪才會重複
   return queues[t].pop();
 }
 function pickShow(t){
-  if(!S.teams[t].length){alert('請先分組');return}
+  if(!S.teams[t].length){notice('請先分組');return}
   let k=0;const el=$('pick'+t);
   const spin=setInterval(()=>{el.textContent=S.teams[t][rnd(0,S.teams[t].length-1)];sTick();
     if(++k>10){clearInterval(spin);el.textContent='👉 '+nextStudent(t);sGood()}},80);
@@ -395,6 +395,8 @@ function boxRender(){
 }
 function modal(html){$('modalIn').innerHTML=html;$('modal').classList.add('on')}
 function closeModal(){$('modal').classList.remove('on')}
+function ask(msg,yes){modal(`<div class="tag">${msg}</div><div class="row" style="justify-content:center;margin-top:16px"><button class="red" id="askYes">確定</button><button onclick="closeModal()">取消</button></div>`);$('askYes').onclick=()=>{closeModal();yes()}}
+function notice(msg){modal(`<div class="tag">${msg}</div><button class="primary" style="margin-top:16px" onclick="closeModal()">好</button>`)}
 function boxOpen(i){
   const b=box.items[i],t=box.turn,o=1-t;b.open=true;
   if(b.type==='lucky'){addScore(t,2);sWin();confetti(25);
@@ -430,7 +432,7 @@ function renderSettings(){
 }
 function saveSettings(){
   const ops=[...$('opsRow').querySelectorAll('input:checked')].map(x=>x.value);
-  if(!ops.length){alert('至少選一種題型');return}
+  if(!ops.length){notice('至少選一種題型');return}
   S.ops=ops;S.max=+$('maxSel').value;S.mulMax=+$('mulSel').value;
   S.teamNames=[$('tnIn0').value.trim()||DEF.teamNames[0],$('tnIn1').value.trim()||DEF.teamNames[1]];
   save();renderScores();renderSettings();
