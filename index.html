@@ -214,7 +214,7 @@ textarea{width:100%;min-height:120px}
 
 <script>
 // ---------- 狀態 ----------
-const DEF={names:['慧宇','欣慈','詩昀','芷柔','苡菲','雅琪','彥登','沛晨'],teams:[[],[]],teamNames:['🔴 紅隊','🔵 藍隊'],scores:[0,0],ops:['+','-'],max:20,mulMax:9};
+const DEF={names:['慧宇','欣慈','詩昀','芷柔','苡菲','雅琪','彥登','沛晨'],teams:[[],[]],teamNames:['🔴 紅隊','🔵 藍隊'],scores:[0,0],ops:['×'],max:20,mulMax:9};
 let S;
 try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem('mathClass')||'{}'))}catch(e){S={...DEF}}
 function save(){try{localStorage.setItem('mathClass',JSON.stringify(S))}catch(e){}}
@@ -307,7 +307,7 @@ function genQ(){
   let a,b,ans;
   if(op==='+'){a=rnd(1,M-1);b=rnd(1,M-a);ans=a+b}           // 和不超過範圍
   else if(op==='-'){a=rnd(2,M);b=rnd(1,a-1);ans=a-b}
-  else if(op==='×'){a=rnd(2,K);b=rnd(1,K);ans=a*b}
+  else if(op==='×'){a=rnd(2,K);b=rnd(2,K);ans=a*b}           // 不出 ×1，太簡單
   else {b=rnd(2,K);ans=rnd(1,K);a=b*ans}
   return {q:`${a} ${op} ${b}`,a:ans};
 }
