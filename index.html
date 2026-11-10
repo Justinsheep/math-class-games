@@ -60,7 +60,8 @@ textarea{width:100%;min-height:120px}
 .mcard .b{transform:rotateY(180deg);background:#fff;font-size:clamp(20px,4vw,40px)}
 .mcard.q .b{border:5px solid #a78bfa} .mcard.a .b{border:5px solid var(--gold);color:#b45309}
 .mcard.done.w0 .b{background:var(--red-l)} .mcard.done.w1 .b{background:var(--blue-l)}
-.mcard.done{cursor:default;opacity:.85}
+.mcard.done{cursor:default} /* 不能在這層加 opacity，會讓 3D 翻面失效、看到反面 */
+.mcard .f,.mcard .b{-webkit-backface-visibility:hidden}
 /* tug */
 .bigq{font-size:clamp(48px,10vw,110px);font-weight:900;text-align:center;margin:10px 0}
 .ans{font-size:clamp(36px,7vw,70px);font-weight:900;text-align:center;color:var(--green);min-height:80px}
