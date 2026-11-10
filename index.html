@@ -319,7 +319,7 @@ function memStart(){
   while(pairs.length<n&&tries++<500){const p=genQ();if(!seen.has(p.a)){seen.add(p.a);pairs.push(p)}}
   mem.cards=shuffle(pairs.flatMap((p,i)=>[{id:i,kind:'q',txt:p.q},{id:i,kind:'a',txt:p.a}]));
   mem.cards.forEach(c=>{c.flip=false;c.done=false;c.w=-1});
-  mem.open=[];mem.score=[0,0];mem.turn=rnd(0,1);mem.lock=false;mem.who=who(mem.turn);memRender();
+  mem.open=[];mem.score=[0,0];mem.bonus=false;mem.turn=rnd(0,1);mem.lock=false;mem.who=who(mem.turn);memRender();
 }
 function memRender(){
   $('memGrid').style.gridTemplateColumns=`repeat(${mem.cards.length>16?5:4},1fr)`;
@@ -329,7 +329,7 @@ function memRender(){
   if(!left){const w=mem.score[0]>mem.score[1]?0:mem.score[1]>mem.score[0]?1:-1;
     $('memTurn').className='turnbar';$('memTurn').innerHTML=`本局：${tn(0)} ${mem.score[0]} 對 ・ ${tn(1)} ${mem.score[1]} 對　${w<0?'🤝 平手！':'🏆 '+tn(w)+' 贏了！'}`;
     setTurnHL(-1);return}
-  $('memTurn').className='turnbar t'+mem.turn;$('memTurn').textContent=`輪到 ${tn(mem.turn)} ${mem.who}`;setTurnHL(mem.turn);
+  $('memTurn').className='turnbar t'+mem.turn;$('memTurn').textContent=mem.bonus?`✅ 配對成功！${tn(mem.turn)} ${mem.who} 再翻一次`:`輪到 ${tn(mem.turn)} ${mem.who}`;setTurnHL(mem.turn);
 }
 function memClick(i){
   const c=mem.cards[i];if(mem.lock||c.flip||c.done)return;
@@ -338,10 +338,10 @@ function memClick(i){
   const [x,y]=mem.open.map(j=>mem.cards[j]);mem.lock=true;
   if(x.id===y.id&&x.kind!==y.kind){
     setTimeout(()=>{x.done=y.done=true;x.w=y.w=mem.turn;mem.score[mem.turn]++;addScore(mem.turn,1);sGood();
-      mem.open=[];mem.lock=false;mem.who=who(mem.turn);
+      mem.open=[];mem.lock=false;mem.bonus=true; // 同一人繼續翻
       if(mem.cards.every(c=>c.done)){sWin();confetti()}memRender()},500);
   }else{
-    sBad();setTimeout(()=>{x.flip=y.flip=false;mem.open=[];mem.lock=false;mem.turn=1-mem.turn;mem.who=who(mem.turn);memRender()},1300);
+    sBad();setTimeout(()=>{x.flip=y.flip=false;mem.open=[];mem.lock=false;mem.bonus=false;mem.turn=1-mem.turn;mem.who=who(mem.turn);memRender()},1300);
   }
 }
 
