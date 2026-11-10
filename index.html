@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>數學遊戲教室</title>
+<style>
+:root{
+  --red:#ef4444;--red-l:#fee2e2;--blue:#3b82f6;--blue-l:#dbeafe;
+  --bg:#fff8ec;--card:#fff;--ink:#1f2937;--muted:#6b7280;--gold:#f59e0b;--green:#22c55e;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,sans-serif;}
+button{font:inherit;cursor:pointer;border:none;border-radius:14px;padding:10px 18px;font-weight:700;
+  background:#e5e7eb;color:var(--ink);transition:transform .1s}
+button:active{transform:scale(.95)}
+button.primary{background:var(--gold);color:#fff}
+button.red{background:var(--red);color:#fff}
+button.blue{background:var(--blue);color:#fff}
+button.green{background:var(--green);color:#fff}
+button:disabled{opacity:.4;cursor:default}
+header{background:#fff;box-shadow:0 2px 8px #0001;position:sticky;top:0;z-index:10}
+.topbar{display:flex;align-items:center;gap:12px;padding:8px 16px;flex-wrap:wrap}
+.logo{font-size:22px;font-weight:900;margin-right:auto}
+.score{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:16px;font-weight:900;font-size:20px}
+.score.t0{background:var(--red-l);color:var(--red)} .score.t1{background:var(--blue-l);color:var(--blue)}
+.score .n{font-size:30px;min-width:40px;text-align:center}
+.score button{padding:2px 10px;font-size:16px;background:#fff}
+.score.turn{outline:4px solid var(--gold)}
+nav{display:flex;gap:6px;padding:0 16px 8px;overflow-x:auto}
+nav button{background:transparent;font-size:17px;white-space:nowrap}
+nav button.on{background:var(--ink);color:#fff}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+section{display:none} section.on{display:block}
+h2{margin:0 0 12px;font-size:28px}
+.panel{background:var(--card);border-radius:20px;padding:20px;box-shadow:0 2px 10px #0001;margin-bottom:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.muted{color:var(--muted)}
+textarea,input,select{font:inherit;font-size:18px;padding:8px 12px;border:2px solid #e5e7eb;border-radius:12px}
+textarea{width:100%;min-height:120px}
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.team{border-radius:20px;padding:16px;min-height:160px}
+.team.t0{background:var(--red-l)} .team.t1{background:var(--blue-l)}
+.team h3{margin:0 0 10px;font-size:26px}
+.team.t0 h3{color:var(--red)} .team.t1 h3{color:var(--blue)}
+.chip{display:inline-block;background:#fff;border-radius:999px;padding:6px 14px;margin:4px;font-size:22px;font-weight:700}
+.chip.pop{animation:pop .4s}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+.picked{font-size:34px;font-weight:900;text-align:center;min-height:50px;margin-top:8px}
+.turnbar{text-align:center;font-size:26px;font-weight:900;padding:10px;border-radius:16px;margin-bottom:14px}
+.turnbar.t0{background:var(--red-l);color:var(--red)} .turnbar.t1{background:var(--blue-l);color:var(--blue)}
+/* memory */
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;perspective:800px}
+.mcard{aspect-ratio:16/9;position:relative;cursor:pointer;transform-style:preserve-3d;transition:transform .45s}
+.mcard.flip,.mcard.done{transform:rotateY(180deg)}
+.mcard .f,.mcard .b{position:absolute;inset:0;border-radius:16px;display:flex;align-items:center;justify-content:center;
+  backface-visibility:hidden;font-weight:900;box-shadow:0 3px 8px #0002}
+.mcard .f{background:linear-gradient(135deg,#a78bfa,#f472b6);color:#fff;font-size:40px}
+.mcard .b{transform:rotateY(180deg);background:#fff;font-size:clamp(20px,4vw,40px)}
+.mcard.q .b{border:5px solid #a78bfa} .mcard.a .b{border:5px solid var(--gold);color:#b45309}
+.mcard.done.w0 .b{background:var(--red-l)} .mcard.done.w1 .b{background:var(--blue-l)}
+.mcard.done{cursor:default;opacity:.85}
+/* tug */
+.bigq{font-size:clamp(48px,10vw,110px);font-weight:900;text-align:center;margin:10px 0}
+.ans{font-size:clamp(36px,7vw,70px);font-weight:900;text-align:center;color:var(--green);min-height:80px}
+.rope-wrap{position:relative;height:90px;margin:20px 0}
+.rope{position:absolute;top:42px;left:6%;right:6%;height:10px;background:repeating-linear-gradient(45deg,#a16207 0 10px,#ca8a04 10px 20px);border-radius:5px}
+.center-line{position:absolute;left:50%;top:10px;bottom:10px;width:4px;background:#111;transform:translateX(-50%)}
+.zone{position:absolute;top:10px;bottom:10px;width:4px}
+.zone.z0{left:14%;background:var(--red)} .zone.z1{right:14%;background:var(--blue)}
+.flag{position:absolute;top:0;font-size:46px;transform:translateX(-50%);transition:left .5s cubic-bezier(.3,1.6,.5,1)}
+.end{position:absolute;top:18px;font-size:44px} .end.e0{left:0} .end.e1{right:0}
+.vs{display:flex;justify-content:space-between;font-size:26px;font-weight:900}
+.vs .p0{color:var(--red)} .vs .p1{color:var(--blue)}
+.timer{font-size:40px;font-weight:900;text-align:center;color:var(--muted)}
+.timer.low{color:var(--red);animation:pulse .5s infinite alternate}
+@keyframes pulse{to{transform:scale(1.15)}}
+/* boxes */
+.boxes{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.box{aspect-ratio:1/1;border-radius:20px;font-size:clamp(28px,6vw,54px);font-weight:900;
+  background:linear-gradient(160deg,#fbbf24,#d97706);color:#fff;box-shadow:0 5px 0 #92400e;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.box small{font-size:16px}
+.box.open{background:#e5e7eb;color:#9ca3af;box-shadow:none;cursor:default}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal.on{display:flex}
+.modal .inner{background:#fff;border-radius:24px;padding:28px;max-width:720px;width:100%;text-align:center;animation:pop .35s}
+.modal .tag{font-size:28px;font-weight:900;margin-bottom:6px}
+.confetti{position:fixed;top:-40px;font-size:32px;z-index:100;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.win{font-size:44px;font-weight:900;text-align:center;padding:20px}
+@media (max-width:640px){.grid,.boxes{grid-template-columns:repeat(3,1fr)} .teams{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="topbar">
+    <div class="logo">🧮 數學遊戲教室</div>
+    <div class="score t0" id="sc0"><span id="tn0"></span><button onclick="addScore(0,-1)">−</button><span class="n" id="s0">0</span><button onclick="addScore(0,1)">＋</button></div>
+    <div class="score t1" id="sc1"><span id="tn1"></span><button onclick="addScore(1,-1)">−</button><span class="n" id="s1">0</span><button onclick="addScore(1,1)">＋</button></div>
+    <button onclick="resetScores()" title="分數歸零">↺ 歸零</button>
+    <button onclick="toggleFS()" title="全螢幕">⛶</button>
+  </div>
+  <nav id="nav">
+    <button data-t="teams" class="on">👥 分組</button>
+    <button data-t="memory">🃏 翻牌配對</button>
+    <button data-t="tug">🪢 拔河搶答</button>
+    <button data-t="boxes">🎁 寶箱挑戰</button>
+    <button data-t="settings">⚙️ 題目設定</button>
+  </nav>
+</header>
+
+<main>
+<!-- 分組 -->
+<section id="teams" class="on">
+  <div class="panel">
+    <h2>班級名單</h2>
+    <p class="muted">每行一個名字（也可以用空白或逗號隔開）。名單只存在這台電腦的瀏覽器裡，不會上傳。</p>
+    <textarea id="names" placeholder="小明&#10;小華&#10;小美"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" onclick="splitTeams()">🎲 隨機分兩組</button>
+      <button onclick="saveNames()">💾 只存名單</button>
+      <span class="muted" id="nameCount"></span>
+    </div>
+  </div>
+  <div class="teams">
+    <div class="team t0"><h3 id="th0"></h3><div id="list0"></div>
+      <div class="row" style="margin-top:10px"><button class="red" onclick="pickShow(0)">🎯 抽一位</button></div>
+      <div class="picked" id="pick0"></div></div>
+    <div class="team t1"><h3 id="th1"></h3><div id="list1"></div>
+      <div class="row" style="margin-top:10px"><button class="blue" onclick="pickShow(1)">🎯 抽一位</button></div>
+      <div class="picked" id="pick1"></div></div>
+  </div>
+</section>
+
+<!-- 翻牌配對 -->
+<section id="memory">
+  <div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0">🃏 翻牌配對</h2>
+      <div class="row">
+        <select id="memPairs"><option value="6">6 對（12 張）</option><option value="8" selected>8 對（16 張）</option><option value="10">10 對（20 張）</option></select>
+        <button class="primary" onclick="memStart()">開始新的一局</button>
+      </div>
+    </div>
+    <p class="muted">紫框是題目、黃框是答案。翻到「題目＋正確答案」就得 1 分，而且可以再翻一次；翻錯就換對方。</p>
+  </div>
+  <div class="turnbar" id="memTurn"></div>
+  <div class="grid" id="memGrid"></div>
+</section>
+
+<!-- 拔河 -->
+<section id="tug">
+  <div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0">🪢 拔河搶答</h2>
+      <div class="row">
+        <label>拉到底要 <select id="tugGoal"><option>3</option><option selected>5</option><option>7</option></select> 次</label>
+        <button class="primary" onclick="tugStart()">重新開始</button>
+      </div>
+    </div>
+    <p class="muted">兩隊各派一人上台，誰先答對就按誰的按鈕，繩子往那邊拉一格（也會 +1 分）。</p>
+  </div>
+  <div class="panel">
+    <div class="vs"><span class="p0" id="tugP0"></span><span class="muted">VS</span><span class="p1" id="tugP1"></span></div>
+    <div class="rope-wrap">
+      <span class="end e0" id="tugE0">💪</span><span class="end e1" id="tugE1">💪</span>
+      <div class="rope"></div><div class="center-line"></div>
+      <div class="zone z0"></div><div class="zone z1"></div>
+      <div class="flag" id="tugFlag">🚩</div>
+    </div>
+    <div class="bigq" id="tugQ">準備好了嗎？</div>
+    <div class="ans" id="tugA"></div>
+    <div class="timer" id="tugTimer"></div>
+    <div class="row" style="justify-content:center">
+      <button class="red" style="font-size:24px" onclick="tugWin(0)" id="tugB0">紅隊答對</button>
+      <button onclick="tugShow()">👀 看答案</button>
+      <button onclick="tugTimerStart(10)">⏱️ 10 秒</button>
+      <button onclick="tugNext()">⏭️ 換一題</button>
+      <button class="blue" style="font-size:24px" onclick="tugWin(1)" id="tugB1">藍隊答對</button>
+    </div>
+  </div>
+</section>
+
+<!-- 寶箱 -->
+<section id="boxes">
+  <div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0">🎁 寶箱挑戰</h2>
+      <button class="primary" onclick="boxStart()">重新擺寶箱</button>
+    </div>
+    <p class="muted">兩隊輪流選寶箱。裡面可能是 1～3 分的題目，也可能是 🍀 幸運 +2、🦊 偷 1 分、💣 炸彈（這回合 0 分）！答錯的話對方可以搶答。</p>
+  </div>
+  <div class="turnbar" id="boxTurn"></div>
+  <div class="boxes" id="boxGrid"></div>
+</section>
+
+<!-- 設定 -->
+<section id="settings">
+  <div class="panel">
+    <h2>⚙️ 題目設定</h2>
+    <p><b>題型（可複選）</b></p>
+    <div class="row" id="opsRow"></div>
+    <p><b>加減法數字範圍</b>　<select id="maxSel"><option value="10">10 以內</option><option value="20">20 以內</option><option value="50">50 以內</option><option value="100">100 以內</option><option value="1000">1000 以內</option></select></p>
+    <p><b>乘除法用到</b>　<select id="mulSel"><option value="5">5 的乘法表</option><option value="9">9 的乘法表</option><option value="12">12 的乘法表</option></select></p>
+    <p><b>隊名</b>　<input id="tnIn0" style="width:180px"> <input id="tnIn1" style="width:180px"></p>
+    <div class="row"><button class="primary" onclick="saveSettings()">💾 儲存設定</button><span class="muted" id="setMsg"></span></div>
+    <p class="muted">範例題目：<span id="sample"></span></p>
+  </div>
+</section>
+</main>
+
+<div class="modal" id="modal"><div class="inner" id="modalIn"></div></div>
+
+<script>
+// ---------- 狀態 ----------
+const DEF={names:[],teams:[[],[]],teamNames:['🔴 紅隊','🔵 藍隊'],scores:[0,0],ops:['+','-'],max:20,mulMax:9};
+let S;
+try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem('mathClass')||'{}'))}catch(e){S={...DEF}}
+function save(){try{localStorage.setItem('mathClass',JSON.stringify(S))}catch(e){}}
+
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=rnd(0,i);[a[i],a[j]]=[a[j],a[i]]}return a};
+const tn=t=>S.teamNames[t];
+
+// ---------- 音效 ----------
+let ac;
+function beep(freqs,dur=.12){
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    freqs.forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;
+      o.connect(g);g.connect(ac.destination);const t=ac.currentTime+i*dur;
+      g.gain.setValueAtTime(.25,t);g.gain.exponentialRampToValueAtTime(.001,t+dur*1.5);o.start(t);o.stop(t+dur*1.6)})}catch(e){}
+}
+const sGood=()=>beep([523,659,784]), sBad=()=>beep([300,200],.18), sWin=()=>beep([523,659,784,1047,784,1047],.13), sTick=()=>beep([880],.05);
+
+function confetti(n=60){
+  const em=['🎉','⭐','🎊','✨','🌟','🍬'];
+  for(let i=0;i<n;i++){const d=document.createElement('div');d.className='confetti';d.textContent=em[rnd(0,em.length-1)];
+    d.style.left=rnd(0,100)+'vw';d.style.animationDuration=(1.8+Math.random()*2)+'s';d.style.animationDelay=Math.random()*.6+'s';
+    document.body.appendChild(d);setTimeout(()=>d.remove(),4500)}
+}
+
+// ---------- 分數 ----------
+function renderScores(){
+  for(const t of [0,1]){$('s'+t).textContent=S.scores[t];$('tn'+t).textContent=tn(t);$('th'+t).textContent=tn(t)}
+  $('tugB0').textContent=tn(0)+' 答對';$('tugB1').textContent=tn(1)+' 答對';
+}
+function addScore(t,n){S.scores[t]=Math.max(0,S.scores[t]+n);save();renderScores();
+  const el=$('s'+t);el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}
+function resetScores(){if(confirm('兩隊分數都歸零？')){S.scores=[0,0];save();renderScores()}}
+function setTurnHL(t){$('sc0').classList.toggle('turn',t===0);$('sc1').classList.toggle('turn',t===1)}
+
+// ---------- 分頁 ----------
+let curTab='teams';
+$('nav').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  curTab=b.dataset.t;document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===curTab));
+  setTurnHL(-1);
+  if(curTab==='memory'){if(!mem.cards.length)memStart();else memRender()}
+  if(curTab==='tug'&&!tug.q)tugStart();
+  if(curTab==='boxes'){if(!box.items.length)boxStart();else boxRender()}
+  if(curTab==='settings')renderSettings();
+};
+function toggleFS(){if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.()}
+
+// ---------- 分組 ----------
+function parseNames(){return $('names').value.split(/[\n,，、\s]+/).map(s=>s.trim()).filter(Boolean)}
+function saveNames(){S.names=parseNames();save();$('nameCount').textContent=`共 ${S.names.length} 人，已儲存`}
+function renderTeams(anim){
+  for(const t of [0,1]){
+    $('list'+t).innerHTML=S.teams[t].map((n,i)=>`<span class="chip ${anim?'pop':''}" style="animation-delay:${i*.08}s">${esc(n)}</span>`).join('')
+      ||'<span class="muted">還沒分組</span>';
+  }
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function splitTeams(){
+  const names=parseNames();if(names.length<2){alert('請至少輸入 2 個名字');return}
+  S.names=names;let k=0;
+  const spin=setInterval(()=>{ // 洗牌動畫
+    const sh=shuffle([...names]);S.teams=[sh.filter((_,i)=>i%2===0),sh.filter((_,i)=>i%2===1)];renderTeams(false);sTick();
+    if(++k>12){clearInterval(spin);
+      const sh2=shuffle([...names]),h=Math.ceil(sh2.length/2);
+      // 人數奇數時隨機決定哪隊多一人
+      S.teams=Math.random()<.5?[sh2.slice(0,h),sh2.slice(h)]:[sh2.slice(h),sh2.slice(0,h)];
+      queues=[[],[]];save();renderTeams(true);sWin();confetti(30);
+      $('nameCount').textContent=`共 ${names.length} 人：${S.teams[0].length} vs ${S.teams[1].length}`}
+  },90);
+}
+let queues=[[],[]];
+function nextStudent(t){ // 輪流抽，全部抽過一輪才會重複
+  if(!S.teams[t].length)return '';
+  if(!queues[t].length)queues[t]=shuffle([...S.teams[t]]);
+  return queues[t].pop();
+}
+function pickShow(t){
+  if(!S.teams[t].length){alert('請先分組');return}
+  let k=0;const el=$('pick'+t);
+  const spin=setInterval(()=>{el.textContent=S.teams[t][rnd(0,S.teams[t].length-1)];sTick();
+    if(++k>10){clearInterval(spin);el.textContent='👉 '+nextStudent(t);sGood()}},80);
+}
+const who=t=>{const s=nextStudent(t);return s?`（${s}）`:''};
+
+// ---------- 出題 ----------
+function genQ(){
+  const ops=S.ops.length?S.ops:['+'],op=ops[rnd(0,ops.length-1)],M=+S.max,K=+S.mulMax;
+  let a,b,ans;
+  if(op==='+'){a=rnd(1,M-1);b=rnd(1,M-a);ans=a+b}           // 和不超過範圍
+  else if(op==='-'){a=rnd(2,M);b=rnd(1,a-1);ans=a-b}
+  else if(op==='×'){a=rnd(2,K);b=rnd(1,K);ans=a*b}
+  else {b=rnd(2,K);ans=rnd(1,K);a=b*ans}
+  return {q:`${a} ${op} ${b}`,a:ans};
+}
+
+// ---------- 翻牌配對 ----------
+const mem={cards:[],open:[],turn:0,lock:false,score:[0,0]};
+function memStart(){
+  const n=+$('memPairs').value,seen=new Set(),pairs=[];let tries=0;
+  while(pairs.length<n&&tries++<500){const p=genQ();if(!seen.has(p.a)){seen.add(p.a);pairs.push(p)}}
+  mem.cards=shuffle(pairs.flatMap((p,i)=>[{id:i,kind:'q',txt:p.q},{id:i,kind:'a',txt:p.a}]));
+  mem.cards.forEach(c=>{c.flip=false;c.done=false;c.w=-1});
+  mem.open=[];mem.score=[0,0];mem.turn=rnd(0,1);mem.lock=false;mem.who=who(mem.turn);memRender();
+}
+function memRender(){
+  $('memGrid').style.gridTemplateColumns=`repeat(${mem.cards.length>16?5:4},1fr)`;
+  $('memGrid').innerHTML=mem.cards.map((c,i)=>`<div class="mcard ${c.kind} ${c.flip?'flip':''} ${c.done?'done w'+c.w:''}" onclick="memClick(${i})">
+    <div class="f">?</div><div class="b">${c.txt}</div></div>`).join('');
+  const left=mem.cards.filter(c=>!c.done).length;
+  if(!left){const w=mem.score[0]>mem.score[1]?0:mem.score[1]>mem.score[0]?1:-1;
+    $('memTurn').className='turnbar';$('memTurn').innerHTML=`本局：${tn(0)} ${mem.score[0]} 對 ・ ${tn(1)} ${mem.score[1]} 對　${w<0?'🤝 平手！':'🏆 '+tn(w)+' 贏了！'}`;
+    setTurnHL(-1);return}
+  $('memTurn').className='turnbar t'+mem.turn;$('memTurn').textContent=`輪到 ${tn(mem.turn)} ${mem.who}`;setTurnHL(mem.turn);
+}
+function memClick(i){
+  const c=mem.cards[i];if(mem.lock||c.flip||c.done)return;
+  c.flip=true;mem.open.push(i);sTick();memRender();
+  if(mem.open.length<2)return;
+  const [x,y]=mem.open.map(j=>mem.cards[j]);mem.lock=true;
+  if(x.id===y.id&&x.kind!==y.kind){
+    setTimeout(()=>{x.done=y.done=true;x.w=y.w=mem.turn;mem.score[mem.turn]++;addScore(mem.turn,1);sGood();
+      mem.open=[];mem.lock=false;mem.who=who(mem.turn);
+      if(mem.cards.every(c=>c.done)){sWin();confetti()}memRender()},500);
+  }else{
+    sBad();setTimeout(()=>{x.flip=y.flip=false;mem.open=[];mem.lock=false;mem.turn=1-mem.turn;mem.who=who(mem.turn);memRender()},1300);
+  }
+}
+
+// ---------- 拔河 ----------
+const tug={pos:0,q:null,over:false,timer:null};
+function tugStart(){tug.pos=0;tug.over=false;tugRenderRope();tugNext()}
+function tugGoal(){return +$('tugGoal').value}
+function tugRenderRope(){
+  const g=tugGoal(),pct=50+(tug.pos/g)*36; // 負=紅隊那邊
+  $('tugFlag').style.left=pct+'%';
+}
+function tugNext(){
+  if(tug.over)return;
+  clearInterval(tug.timer);$('tugTimer').textContent='';$('tugTimer').className='timer';
+  tug.q=genQ();$('tugQ').textContent=tug.q.q+' = ?';$('tugA').textContent='';
+  $('tugP0').textContent=tn(0)+who(0);$('tugP1').textContent=who(1)+tn(1);
+  $('tugB0').disabled=$('tugB1').disabled=false;
+}
+function tugShow(){if(tug.q)$('tugA').textContent='答案：'+tug.q.a}
+function tugWin(t){
+  if(tug.over||!tug.q)return;
+  clearInterval(tug.timer);tugShow();addScore(t,1);sGood();
+  tug.pos+=t===0?-1:1;tugRenderRope();
+  $('tugB0').disabled=$('tugB1').disabled=true;
+  const e=$('tugE'+t);e.classList.remove('pop');void e.offsetWidth;e.classList.add('chip','pop');
+  if(Math.abs(tug.pos)>=tugGoal()){tug.over=true;sWin();confetti();
+    $('tugQ').innerHTML=`<span style="color:var(--${t?'blue':'red'})">🏆 ${tn(t)} 拔河勝利！</span>`;$('tugA').textContent='';return}
+  setTimeout(tugNext,1600);
+}
+function tugTimerStart(sec){
+  clearInterval(tug.timer);let s=sec;const el=$('tugTimer');el.textContent=s;el.className='timer';
+  tug.timer=setInterval(()=>{s--;if(s<=0){clearInterval(tug.timer);el.textContent='⏰ 時間到！';sBad();tugShow();return}
+    el.textContent=s;if(s<=3){el.className='timer low';sTick()}},1000);
+}
+$('tugGoal').onchange=tugStart;
+
+// ---------- 寶箱 ----------
+const box={items:[],turn:0};
+function boxStart(){
+  const list=[1,1,1,2,2,2,3,3].map(p=>({type:'q',pts:p}))
+    .concat([{type:'lucky'},{type:'lucky'},{type:'steal'},{type:'bomb'}]);
+  box.items=shuffle(list).map(x=>({...x,open:false}));box.turn=rnd(0,1);box.who=who(box.turn);boxRender();
+}
+function boxRender(){
+  $('boxGrid').innerHTML=box.items.map((b,i)=>b.open
+    ?`<div class="box open">${{q:'✔️',lucky:'🍀',steal:'🦊',bomb:'💣'}[b.type]}</div>`
+    :`<button class="box" onclick="boxOpen(${i})">${i+1}<small>🎁</small></button>`).join('');
+  if(box.items.every(b=>b.open)){$('boxTurn').className='turnbar';$('boxTurn').textContent='寶箱都開完了！看看上面的總分 🎉';setTurnHL(-1);return}
+  $('boxTurn').className='turnbar t'+box.turn;$('boxTurn').textContent=`輪到 ${tn(box.turn)} ${box.who} 選寶箱`;setTurnHL(box.turn);
+}
+function modal(html){$('modalIn').innerHTML=html;$('modal').classList.add('on')}
+function closeModal(){$('modal').classList.remove('on')}
+function boxOpen(i){
+  const b=box.items[i],t=box.turn,o=1-t;b.open=true;
+  if(b.type==='lucky'){addScore(t,2);sWin();confetti(25);
+    modal(`<div class="bigq">🍀</div><div class="tag">幸運寶箱！${esc(tn(t))} 直接 +2 分</div><button class="primary" onclick="boxEnd()">好耶！</button>`)}
+  else if(b.type==='steal'){const can=S.scores[o]>0;if(can){addScore(o,-1);addScore(t,1)}sGood();
+    modal(`<div class="bigq">🦊</div><div class="tag">${can?`狐狸寶箱！從 ${esc(tn(o))} 偷走 1 分`:`狐狸寶箱！可是 ${esc(tn(o))} 還沒有分數可以偷，送你 1 分`}</div><button class="primary" onclick="boxEnd()">嘿嘿</button>`);
+    if(!can)addScore(t,1)}
+  else if(b.type==='bomb'){sBad();
+    modal(`<div class="bigq">💣</div><div class="tag">炸彈！這回合 0 分，換對方</div><button onclick="boxEnd()">好吧</button>`)}
+  else{
+    // 3 分題：從兩題中合成（例：a+b+c 或兩步）
+    let q;if(b.pts===3){const p1=genQ(),p2=genQ();q={q:`(${p1.q}) + (${p2.q})`,a:p1.a+p2.a}}else q=genQ();
+    box.cur={...q,pts:b.pts};
+    modal(`<div class="tag" style="color:var(--gold)">${'⭐'.repeat(b.pts)} ${b.pts} 分題</div>
+      <div class="bigq" style="font-size:clamp(36px,8vw,80px)">${q.q} = ?</div><div class="ans" id="boxA"></div>
+      <div class="row" style="justify-content:center">
+        <button onclick="$('boxA').textContent='答案：'+box.cur.a">👀 看答案</button>
+        <button class="green" onclick="boxAns(${t})">✅ ${esc(tn(t))} 答對</button>
+        <button class="${o?'blue':'red'}" onclick="boxAns(${o})">🙋 ${esc(tn(o))} 搶答成功</button>
+        <button onclick="sBad();boxEnd()">❌ 都沒答對</button>
+      </div>`)}
+  boxRender();
+}
+function boxAns(t){addScore(t,box.cur.pts);sGood();confetti(15);boxEnd()}
+function boxEnd(){closeModal();box.turn=1-box.turn;box.who=who(box.turn);boxRender();if(box.items.every(b=>b.open)){sWin();confetti()}}
+
+// ---------- 設定 ----------
+const OPS=[['+','加法 ＋'],['-','減法 −'],['×','乘法 ×'],['÷','除法 ÷']];
+function renderSettings(){
+  $('opsRow').innerHTML=OPS.map(([v,l])=>`<label style="font-size:20px"><input type="checkbox" value="${v}" ${S.ops.includes(v)?'checked':''}> ${l}</label>`).join('　');
+  $('maxSel').value=S.max;$('mulSel').value=S.mulMax;$('tnIn0').value=S.teamNames[0];$('tnIn1').value=S.teamNames[1];
+  $('sample').textContent=[1,2,3,4,5].map(()=>{const q=genQ();return q.q+' = '+q.a}).join('、');
+}
+function saveSettings(){
+  const ops=[...$('opsRow').querySelectorAll('input:checked')].map(x=>x.value);
+  if(!ops.length){alert('至少選一種題型');return}
+  S.ops=ops;S.max=+$('maxSel').value;S.mulMax=+$('mulSel').value;
+  S.teamNames=[$('tnIn0').value.trim()||DEF.teamNames[0],$('tnIn1').value.trim()||DEF.teamNames[1]];
+  save();renderScores();renderSettings();
+  mem.cards=[];tug.q=null;box.items=[]; // 下次進遊戲用新題目
+  $('setMsg').textContent='✅ 已儲存，遊戲會用新題目';setTimeout(()=>$('setMsg').textContent='',2500);
+}
+
+// ---------- 啟動 ----------
+$('names').value=S.names.join('\n');
+if(S.names.length)$('nameCount').textContent=`共 ${S.names.length} 人`;
+renderScores();renderTeams(false);
+</script>
+</body>
+</html>
