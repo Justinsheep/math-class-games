@@ -115,7 +115,7 @@ textarea{width:100%;min-height:120px}
 <section id="teams" class="on">
   <div class="panel">
     <h2>班級名單</h2>
-    <p class="muted">每行一個名字（也可以用空白或逗號隔開）。名單只存在這台電腦的瀏覽器裡，不會上傳。</p>
+    <p class="muted">每行一個名字（也可以用空白或逗號隔開）。已經預先放好班上名單；在這裡改過的名單會記在這台電腦的瀏覽器裡。</p>
     <textarea id="names" placeholder="小明&#10;小華&#10;小美"></textarea>
     <div class="row" style="margin-top:10px">
       <button class="primary" onclick="splitTeams()">🎲 隨機分兩組</button>
@@ -214,7 +214,7 @@ textarea{width:100%;min-height:120px}
 
 <script>
 // ---------- 狀態 ----------
-const DEF={names:[],teams:[[],[]],teamNames:['🔴 紅隊','🔵 藍隊'],scores:[0,0],ops:['+','-'],max:20,mulMax:9};
+const DEF={names:['慧宇','欣慈','詩昀','芷柔','苡菲','雅琪','彥登','沛晨'],teams:[[],[]],teamNames:['🔴 紅隊','🔵 藍隊'],scores:[0,0],ops:['+','-'],max:20,mulMax:9};
 let S;
 try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem('mathClass')||'{}'))}catch(e){S={...DEF}}
 function save(){try{localStorage.setItem('mathClass',JSON.stringify(S))}catch(e){}}
