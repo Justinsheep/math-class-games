@@ -65,6 +65,9 @@ textarea{width:100%;min-height:120px}
 .mcard .f{background:linear-gradient(135deg,#a78bfa,#f472b6);color:#fff;font-size:40px}
 .mcard .b{transform:rotateY(180deg);background:#fff;font-size:clamp(18px,2.6vw,38px)}
 .mcard.a .f{background:linear-gradient(135deg,#fbbf24,#f97316)}
+.grid[data-cols="4"] .mcard{aspect-ratio:3/2} .grid[data-cols="4"] .mcard .b{font-size:clamp(16px,2.1vw,32px)}
+.grid[data-cols="5"] .mcard{aspect-ratio:16/10} .grid[data-cols="5"] .mcard .b{font-size:clamp(14px,1.7vw,26px)}
+.grid[data-cols="5"] .mcard .f{font-size:28px} .grid[data-cols="5"]{gap:7px}
 .mcard.q .b{border:5px solid #a78bfa} .mcard.a .b{border:5px solid var(--gold);color:#b45309}
 .mcard.done.w0 .b{background:var(--red-l)} .mcard.done.w1 .b{background:var(--blue-l)}
 .mcard.done{cursor:default} /* 不能在這層加 opacity，會讓 3D 翻面失效、看到反面 */
@@ -159,7 +162,7 @@ textarea{width:100%;min-height:120px}
     <div class="row" style="justify-content:space-between">
       <h2 style="margin:0">🃏 翻牌配對</h2>
       <div class="row">
-        <select id="memPairs"><option value="6">6 對（12 張）</option><option value="8" selected>8 對（16 張）</option><option value="10">10 對（20 張）</option></select>
+        <select id="memPairs"><option value="9">9 對（左右各 3×3）</option><option value="16" selected>16 對（左右各 4×4）</option><option value="25">25 對（左右各 5×5）</option></select>
         <button class="primary" onclick="memStart()">開始新的一局</button>
       </div>
     </div>
@@ -336,16 +339,18 @@ function genQ(){
 // ---------- 翻牌配對 ----------
 const mem={cards:[],open:[],turn:0,lock:false,score:[0,0]};
 function memStart(){
-  const n=+$('memPairs').value,seen=new Set(),pairs=[];let tries=0;
-  while(pairs.length<n&&tries++<500){const p=genQ();if(!seen.has(p.a)){seen.add(p.a);pairs.push(p)}}
+  // 盡量答案不重複；不夠時（例如 5 的乘法表出 25 對）允許答案相同、再不夠才允許算式重複。配對看「答案數值」，所以答案相同的牌互通。
+  const n=+$('memPairs').value,seenA=new Set(),seenQ=new Set(),pairs=[];let tries=0;
+  while(pairs.length<n&&tries++<3000){const p=genQ();
+    if(tries<800?!seenA.has(p.a):tries<2000?!seenQ.has(p.q):true){seenA.add(p.a);seenQ.add(p.q);pairs.push(p)}}
   // 左邊算式區、右邊答案區，各自洗牌
-  mem.cards=shuffle(pairs.map((p,i)=>({id:i,kind:'q',txt:p.q}))).concat(shuffle(pairs.map((p,i)=>({id:i,kind:'a',txt:p.a}))));
+  mem.cards=shuffle(pairs.map((p,i)=>({id:i,kind:'q',txt:p.q,ans:p.a}))).concat(shuffle(pairs.map((p,i)=>({id:i,kind:'a',txt:p.a,ans:p.a}))));
   mem.cards.forEach(c=>{c.flip=false;c.done=false;c.w=-1});
   mem.open=[];mem.score=[0,0];mem.bonus=false;mem.turn=rnd(0,1);mem.lock=false;memRender();
 }
 function memRender(){
-  const cols=mem.cards.length/2<=6?3:mem.cards.length/2<=8?4:5;
-  for(const k of ['q','a']){const g=$(k==='q'?'memQ':'memA');g.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  const cols=Math.ceil(Math.sqrt(mem.cards.length/2)); // 9→3×3、16→4×4、25→5×5
+  for(const k of ['q','a']){const g=$(k==='q'?'memQ':'memA');g.style.gridTemplateColumns=`repeat(${cols},1fr)`;g.dataset.cols=cols;
     g.innerHTML=mem.cards.map((c,i)=>c.kind!==k?'':`<div class="mcard ${c.kind} ${c.flip?'flip':''} ${c.done?'done w'+c.w:''}" onclick="memClick(${i})">
     <div class="f">${k==='q'?'✖️':'？'}</div><div class="b">${c.txt}</div></div>`).join('')}
   const left=mem.cards.filter(c=>!c.done).length;
@@ -360,7 +365,7 @@ function memClick(i){
   c.flip=true;mem.open.push(i);sTick();memRender();
   if(mem.open.length<2)return;
   const [x,y]=mem.open.map(j=>mem.cards[j]);mem.lock=true;
-  if(x.id===y.id&&x.kind!==y.kind){
+  if(x.ans===y.ans&&x.kind!==y.kind){
     setTimeout(()=>{x.done=y.done=true;x.w=y.w=mem.turn;mem.score[mem.turn]++;addScore(mem.turn,1);sGood();
       mem.open=[];mem.lock=false;mem.bonus=true; // 同一人繼續翻
       if(mem.cards.every(c=>c.done)){sWin();confetti();advance(mem.turn)}memRender()},500);
